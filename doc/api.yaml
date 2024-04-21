@@ -1,273 +1,1126 @@
 openapi: 3.0.0
-servers:
-  - url: "http://localhost:3000"
 info:
-  title: Fantastic Coffee (decaffeinated)
-  description: Fantastic Coffee (decaffeinated), the skeleton project for Web and Software architecture course
+  title: WASAPhoto
+  description: |-
+    Keep in touch with your friends by sharing photos of special moments, thanks to WASAPhoto! 
+    You can upload your photos directly from your PC, and they will be visible to everyone following you. 
+    This API allows users to follow / unfollow other users, like and comment on their photos, ban / unban other users and search for their profiles. 
+    A user can log in and sign up to their profile with their username, which can also be changed later.
   version: 1.0.0
+components:
+  securitySchemes:
+    bearerAuth:
+      type: http
+      scheme: bearer
+  schemas:
+    photoId:
+      description: unique photo identifier
+      type: integer
+      readOnly: true
+      example: 123456789
+    username:
+      description: name of the user profile
+      type: string
+      pattern: 'ˆ.*?$'
+      minLength: 3
+      maxLength: 16
+      #example: 'Maria'
+
+    PhotoMultipartResponse:
+      description: an object that consists of a photo and its related metada
+      type: object
+      properties:
+        photo:
+          description: the photo the user wants to upload
+          type: string
+          format: binary
+          minLength: 3
+          maxLength: 10000
+        caption:
+          description: an optional textual caption for the photo
+          type: string
+          #example: "hello friends"
+          minLength: 0
+          maxLength: 150
+          pattern : "ˆ.*?$"
+        location:
+          description: an optional location of the photo
+          type: string
+          #example: "Rome, Italy"
+          minLength: 0
+          maxLength: 30
+          pattern : "ˆ.*?$"
+        author:
+          $ref: '#/components/schemas/username'
+        uploadDateTime:
+          description: date and time of the photo upload (ISO 8601 format)
+          type: string
+          format: date-time
+          example: "2022-03-01T12:00:00"
+          readOnly: true
+          minLength: 4
+          maxLength: 30
+        photoId:
+          $ref: '#/components/schemas/photoId'
+        likesCount:
+          type: integer
+          description: number of likes on the photo
+          default: 0
+          readOnly: true
+        likes:
+          $ref: '#/components/schemas/LikeList'
+        commentsCount:
+          type: integer
+          description: number of comments on the photo
+          default: 0
+          readOnly: true
+        comments:
+          $ref: '#/components/schemas/CommentList'
+      
+    PhotoMultipart:
+      description: an object that consists of a photo and its related metada
+      type: object
+      properties:
+        photo:
+          description: the photo the user wants to upload
+          type: string
+          format: binary
+          minLength: 3
+          maxLength: 10000
+        caption:
+          description: an optional textual caption for the photo
+          type: string
+          #example: "hello friends"
+          minLength: 0
+          maxLength: 150
+          pattern : "ˆ.*?$"
+        location:
+          description: an optional location of the photo
+          type: string
+          #example: "Rome, Italy"
+          minLength: 0
+          maxLength: 30
+          pattern : "ˆ.*?$"
+        uploadDateTime:
+          description: date and time of the photo upload (ISO 8601 format)
+          type: string
+          format: date-time
+          example: "2022-03-01T12:00:00"
+          readOnly: true
+          minLength: 4
+          maxLength: 30
+        photoId:
+          $ref: '#/components/schemas/photoId'
+        likesCount:
+          type: integer
+          description: number of likes on the photo
+          default: 0
+          readOnly: true
+        commentsCount:
+          type: integer
+          description: number of comments on the photo
+          default: 0
+          readOnly: true
+      required:
+        - photo  
+        
+    PhotoUpdate:
+      description: object that describes caption and location updates of the photo
+      type: object
+      properties:
+        caption:
+          description: an optional updated textual caption for the photo
+          type: string
+          #example: "hello friends"
+          minLength: 0
+          maxLength: 150
+          pattern : "ˆ.*?$"
+        location:
+          description: an optional updated location of the photo
+          type: string
+          #example: "Rome, Italy"
+          minLength: 0
+          maxLength: 30
+          pattern : "ˆ.*?$"
+    Like:
+      description: object that describes a like on a photo by a user
+      type: object
+      properties:
+        username:
+          $ref: '#/components/schemas/username'
+        photoId:
+          $ref: '#/components/schemas/photoId'
+
+    CommentResponse:
+      description: object that describes a comment on a photo by a user
+      type: object
+      properties:
+        commentId:
+          description: unique comment identifier
+          type: integer
+          readOnly: true
+          example: 987654321
+        photoId:
+          $ref: '#/components/schemas/photoId'
+        author:
+          $ref: '#/components/schemas/username'
+        text:
+          description: textual content of the comment    
+          type: string
+          #example: "Nice photo!"
+          minLength: 0
+          maxLength: 150
+          pattern : "ˆ.*?$"
+        date:
+          description: date of comment upload
+          type: string
+          format: date
+          example: "2022-08-16"
+          minLength: 4
+          maxLength: 30
+          readOnly: true
+
+    Comment:
+      description: object that describes a comment on a photo by a user
+      type: object
+      properties:
+        commentId:
+          description: unique comment identifier
+          type: integer
+          readOnly: true
+          example: 987654321
+        text:
+          description: textual content of the comment    
+          type: string
+          #example: "Nice photo!"
+          minLength: 0
+          maxLength: 150
+          pattern : "ˆ.*?$"
+        date:
+          description: date of comment upload
+          type: string
+          format: date
+          example: "2022-08-16"
+          minLength: 4
+          maxLength: 30
+          readOnly: true
+    Follow:
+      description: object that describes a follow on a photo by a user
+      type: object
+      properties:
+        followedUsername:
+          $ref: '#/components/schemas/username'
+      required:
+      - followedUsername
+    ConflictResponseLike:
+      description: object that describes a conflict that emerges when the same like already exists
+      type: object
+      properties:
+        message:
+          description: notification to the user that they have already liked that photo
+          type: string
+          example: "Like already exists"
+          minLength: 1
+          maxLength: 100
+        existing_like:
+          $ref: '#/components/schemas/Like'
+          
+    ConflictResponseFollow:
+      type: object
+      description: object that describes a conflict that emerges when the same follow already exists
+      properties:
+        message:
+          description: notification to the user that they have already followed that user
+          type: string
+          example: "Already following this user"
+          minLength: 1
+          maxLength: 100
+        existing_follow:
+          $ref: '#/components/schemas/Follow'
+    BanRequest:
+      description: objects that describes a ban request on a user
+      type: object
+      required:
+        - BannedUsername
+      properties:
+        BannedUsername:
+          $ref: '#/components/schemas/username'
+    ConflictResponseBan:
+      type: object
+      description: object that describes a conflict that emerges when the same ban request already exists
+      properties:
+        message:
+          description: notification to the user that they have already banned that user
+          type: string
+          example: "User already banned"
+          minLength: 1
+          maxLength: 100
+        existing_ban:
+          $ref: '#/components/schemas/BanRequest'
+    FollowedUsers:
+      description: array of all users that the specified user is following
+      type: array
+      items:
+        {$ref: '#/components/schemas/Follow'}
+      minItems: 0
+      maxItems: 1000
+    PhotoList:
+      description: array of photos
+      type: array
+      items:
+        {$ref: '#/components/schemas/PhotoMultipartResponse'}
+      minItems: 0
+      maxItems: 1000  
+    BannedUsers:
+      description: array of all users that the specified user has banned
+      type: array
+      items:
+        {$ref: '#/components/schemas/BanRequest'}
+      minItems: 0
+      maxItems: 1000
+    CommentList:
+      description: array of all comments on a specific photo
+      type: array
+      items:
+        {$ref: '#/components/schemas/CommentResponse'} 
+      minItems: 0
+      maxItems: 10000
+    LikeList:
+      description: array of all likes on a specific photo
+      type: array
+      items:
+        {$ref: '#/components/schemas/Like'} 
+      minItems: 0
+      maxItems: 10000
+    UserProfile:
+      description: profile of the user with their photos and data
+      type: object
+      properties:
+        username:
+          $ref: '#/components/schemas/username'
+        total_photos:
+          type: integer
+          description: Total number of photos uploaded by the user
+          readOnly: true
+        followersCount:
+          readOnly: true
+          type: integer
+          description: Number of followers of the user
+        followersList:
+          $ref: '#/components/schemas/Followers'
+        followingCount:
+          type: integer
+          description: Number of users the user is following
+        followingList:
+          $ref: '#/components/schemas/FollowedUsers'
+        userPhotos:
+          $ref: '#/components/schemas/PhotoList'
+    User:
+      description: user object with all its resources
+      type: object
+      properties:
+        username:
+          $ref: '#/components/schemas/username'
+        profile:
+          $ref: '#/components/schemas/UserProfile'
+        banned:
+          $ref: '#/components/schemas/BannedUsers'
+        photostream:
+           $ref: '#/components/schemas/PhotoList'
+    Followers:
+      description: array of all users that follow the specific user
+      type: array
+      items:
+        type: object
+        properties:
+          followerUsername:
+            $ref: '#/components/schemas/username'
+      minItems: 0
+      maxItems: 10000
+tags:
+  - name: "login"
+    description: "Endpoints for logging in / signing up"
+  - name: "Photo"
+    description: "Endpoints for photo actions"
+  - name: "Like"
+    description: "Endpoints for like actions"
+  - name: "Comment"
+    description: "Endpoints for comment actions"
+  - name: "Follow"
+    description: "Endpoints for follow actions"
+  - name: "Ban"
+    description: "Endpoints for ban actions"
 paths:
-  /status:
-    parameters:
-      - $ref: "#/components/parameters/XAppBuild"
-      - $ref: "#/components/parameters/XAppVersion"
-      - $ref: "#/components/parameters/XAppLanguage"
-      - $ref: "#/components/parameters/XAppPlatform"
+  /photos/:
+    post:
+        operationId: uploadPhoto
+        tags: ["Photo"]
+        summary: post a new photo
+        description: |-
+          post a new photo to your profile, with metada about the author, date and time of the image, and optional caption and location
+        security:
+        - bearerAuth: []
+        requestBody:
+              content:
+                multipart/form-data:
+                  schema:
+                    $ref: '#/components/schemas/PhotoMultipart'
+        responses:
+          "201":
+            description: new photo created
+            content:
+              application/json:
+                schema:
+                  {$ref: '#/components/schemas/PhotoMultipartResponse'}
+          '400':
+            description: Bad request - check request parameters
+          '401':
+            description: Unauthorized - not an authenticated user
+          '500':
+            description: Internal server error
     get:
-      tags: ["General"]
-      operationId: getStatusMessage
-      summary: Get status message for the user about issues / updates
-      description: |-
-        The response contains a status message meant for the user. It might
-        contains information about current technical issues, update messages
-        or general information.
+      summary: Get a list of photos
+      tags: ["Photo"]
+      operationId: getPhotos
+      description: Retrieve a list of photos, with optional filtering by username
+      security:
+        - bearerAuth: []
+      parameters:
+        - name: searchedUsername
+          in: query
+          description: Filter photos by user ID (optional)
+          required: false
+          schema:
+            $ref: '#/components/schemas/username'
+        #- name: username
+          #in: query
+          #description: Username of the requester
+          #required: true
+          #schema:
+            #$ref: '#/components/schemas/username'
       responses:
-        "200":
-          description: Status message available
+        '200':
+          description: Successful operation - returns a list of photos
           content:
             application/json:
               schema:
-                $ref: "#/components/schemas/StatusInfo"
-        "400": { $ref: "#/components/responses/BadRequest" }
-        "500": { $ref: "#/components/responses/InternalServerError" }
-
-  /:
-    get:
-      tags: ["Group 1"]
-      operationId: index
-      summary: Get an index
-      description: |-
-        This is an example of an index API description
-      responses:
-        "200":
-          description: Successful
-        "400": { $ref: "#/components/responses/BadRequest" }
-        "500": { $ref: "#/components/responses/InternalServerError" }
-  /context:
+                  $ref: '#/components/schemas/PhotoList'
+        '400':
+            description: Bad request - check request parameters
+        '401':
+          description: Unauthorized - user not authenticated 
+        '403':
+          description: Forbidden - not allowed access to other users' photos because of the ban
+        '404':
+          description: Photos or user not found
+        '500':
+          description: Internal server error  
+  /photos/{photoId}:
     parameters:
-      - $ref: "#/components/parameters/XAppBuild"
-      - $ref: "#/components/parameters/XAppVersion"
-      - $ref: "#/components/parameters/XAppLanguage"
-      - $ref: "#/components/parameters/XAppPlatform"
-    post:
-      tags: ["Group 1"]
-      operationId: getContext
-      summary: Another API example
-      description: |-
-        Example description 2
-      responses:
-        "200":
-          description: Request ok
-          headers:
-            X-Access-Token:
-              description: Access token for authenticated requests
-              schema: { type: string }
-        "500": { $ref: "#/components/responses/InternalServerError" }
-  /authenticated:
-    parameters:
-      - $ref: "#/components/parameters/XAppBuild"
-      - $ref: "#/components/parameters/XAppVersion"
-      - $ref: "#/components/parameters/XAppLanguage"
-      - $ref: "#/components/parameters/XAppPlatform"
-    get:
-      tags: ["Group 2"]
-      operationId: getAuthenticatedExample
-      summary: Get an endpoint with authentication
-      description: |-
-        Get an endpoint with auth
-      security:
-        - LegacyAuth: []
-        - AppToken: []
-      responses:
-        "200":
-          description: Logout successful
-        "500": { $ref: "#/components/responses/InternalServerError" }
-
-  /pictures/{cat}:
-    parameters:
-      - $ref: "#/components/parameters/XAppBuild"
-      - $ref: "#/components/parameters/XAppVersion"
-      - $ref: "#/components/parameters/XAppLanguage"
-      - $ref: "#/components/parameters/XAppPlatform"
-      - $ref: "#/components/parameters/cat"
-    get:
-      tags: ["Cat pictures"]
-      operationId: getCatFromPicture
-      summary: Example of a parameter in URL
-      description: |-
-        Example of a parameter in URL
-      security:
-        - LegacyAuth: []
-      responses:
-        "200":
-          description: Student picture found
-          content:
-            image/png:
-              schema:
-                type: string
-                format: binary
-              example: Picture binary file
-        "404":
-          description: Student picture not found
-        "500": { $ref: "#/components/responses/InternalServerError" }
-
-
-  /autofeeder/{cat}:
-    parameters:
-      - $ref: "#/components/parameters/XAppBuild"
-      - $ref: "#/components/parameters/XAppVersion"
-      - $ref: "#/components/parameters/XAppLanguage"
-      - $ref: "#/components/parameters/XAppPlatform"
-      - $ref: "#/components/parameters/cat"
-    put:
-      tags: ["Autofeeder"]
-      operationId: createCatAutofeeder
-      summary: Example of PUT operation
-      security:
-        - LegacyAuth: []
-      responses:
-        "200":
-          description: Auto feed enabled
-        "400": { $ref: "#/components/responses/BadRequest" }
-        "500": { $ref: "#/components/responses/InternalServerError" }
+      - name: photoId
+        in: path
+        required: true
+        schema:
+            $ref: '#/components/schemas/photoId'
+      #- name: username
+        #in: query
+        #description: Username of the requester
+        #required: true
+        #schema:
+          #$ref: '#/components/schemas/username'
     delete:
-      tags: ["Autofeeder"]
-      operationId: deleteCatAutofeeder
-      summary: Example of DELETE operation
+      operationId: deletePhoto
+      tags: ["Photo"]
+      summary: delete a photo
+      description: author deletes their photo from the system, along with its likes and comments
       security:
-        - LegacyAuth: []
+        - bearerAuth: []
       responses:
-        "200":
-          description: Auto feed disabled
-        "400": { $ref: "#/components/responses/BadRequest" }
-        "500": { $ref: "#/components/responses/InternalServerError" }
-
-  /session/login:
-    parameters:
-      - $ref: "#/components/parameters/XAppBuild"
-      - $ref: "#/components/parameters/XAppVersion"
-      - $ref: "#/components/parameters/XAppLanguage"
-      - $ref: "#/components/parameters/XAppPlatform"
-    post:
-      tags: ["Session management"]
-      operationId: login
-      summary: Log-in into system
-      description: |-
-        Perform a log-in action using username and password credentials.
-        Returns a token which can be used in authenticated requests.
+        '204':
+          description: Photo and its likes and comments deleted successfully
+        '400':
+            description: Bad request - check request parameters
+        '401':
+          description: Unauthorized - user not authenticated
+        '403':
+          description: Forbidden - the requester is not the author of the photo
+        '404':
+          description: Photo not found
+        '500':
+          description: Internal server error
+    patch:
+      operationId: updatePhoto
+      tags: ["Photo"]
+      summary: update photo caption and location
+      description: author replaces photo caption and location properties with the ones specified in the request body
+      security:
+        - bearerAuth: []
       requestBody:
         content:
-          application/x-www-form-urlencoded:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/PhotoUpdate'
+      responses:
+        '201':
+          description: Photo location and caption updated successfully
+          content:
+              application/json:
+                schema:
+                  {$ref: '#/components/schemas/PhotoMultipartResponse'}
+        '401':
+          description: Unauthorized - user not authenticated
+        '403':
+          description: Forbidden - the requester is not the author of the photo
+        '404':
+          description: Photo not found
+        '500':
+          description: Internal server error
+  /photos/{photoId}/likes/:
+    post:
+      operationId: likePhoto
+      tags: ["Like"]
+      summary: add a like to a photo
+      description: like any photo, except your own photos
+      security:
+        - bearerAuth: []
+      parameters:
+        - name: photoId
+          in: path
+          description: ID of the photo to like
+          required: true
+          schema:
+            $ref: '#/components/schemas/photoId'
+      #requestBody:
+        #required: true
+        #content:
+          #application/json:
+            #schema:
+              #$ref: '#/components/schemas/Like'
+      responses:
+        '201':
+          description: Like added successfully
+          content:
+            application/json:
+              schema: { $ref: "#/components/schemas/Like" }
+        '409':
+          description: Conflict - Like already exists
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ConflictResponseLike'
+        '400':
+          description: Bad request - check request parameters
+        '401':
+          description: Unauthorized -user is not authenticated
+        '403':
+          description: Forbidden - the requester is the author of the photo or is banned by the photo author
+        '404':
+          description: Photo not found
+        '500':
+          description: Internal server error
+      x-idempotent: true  
+      # Custom extension to mark the operation as idempotent, liking a photo by the same user many times should be the same as liking it once
+    get:
+      summary: Get all likes for a photo
+      tags: ["Like"]
+      operationId: getLikes
+      description: Retrieve all likes associated with a specific photo
+      security:
+        - bearerAuth: []
+      parameters:
+        - name: photoId
+          in: path
+          description: ID of the photo
+          required: true
+          schema:
+            $ref: '#/components/schemas/photoId'
+      responses:
+        '200':
+          description: Successful operation - returns a list of all likes on a photo
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/LikeList'
+        '400':
+          description: Bad request - check request parameters
+        '401':
+          description: Unauthorized -user is not authenticated
+        '403':
+          description: Forbidden - the requester is the author of the photo or is banned by the photo author
+        '404':
+          description: Photo not found or photo does not have any likes
+        '500':
+          description: Internal server error
+  /photos/{photoId}/likes/{username}:
+    delete:
+      operationId: unlikePhoto
+      tags: ["Like"]
+      summary: remove a like from a photo
+      description: unlike photos of other users
+      security:
+        - bearerAuth: []
+      parameters:
+        - name: photoId
+          in: path
+          description: ID of the photo to unlike
+          required: true
+          schema:
+            $ref: '#/components/schemas/photoId'
+        - name: username
+          in: path
+          description: the username of user requesting removal of their like
+          required: true
+          schema:
+            $ref: '#/components/schemas/username'
+            
+      responses:
+        '204':
+          description: Like removed successfully
+        '401':
+          description: Unauthorized -user is not authenticated
+        '403':
+          description: Forbidden - the requester is banned by the photo author or username in bearer token does not match the provided path parameter username, or the user is not the author of the like
+        '404':
+          description: Photo or like not found
+        '500':
+          description: Internal server error
+  /photos/{photoId}/comments/:
+    post:
+      operationId: commentPhoto
+      tags: ["Comment"]
+      summary: Add a comment to a photo
+      description: add a new comment to any photo 
+      security:
+        - bearerAuth: []
+      parameters:
+        - name: photoId
+          in: path
+          description: ID of the photo to comment on
+          required: true
+          schema:
+            $ref: '#/components/schemas/photoId'
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/Comment'
+      responses:
+        '201':
+          description: Comment added successfully
+          content:
+            application/json:
+              schema: { $ref: "#/components/schemas/CommentResponse" }
+        '400':
+          description: Bad request - check request parameters
+        '401':
+          description: Unauthorized -user is not authenticated
+        '403':
+          description: Forbidden - the requester is banned by the photo author 
+        '404':
+          description: Photo not found
+        '500':
+          description: Internal server error
+    get:
+      summary: Get all comments for a photo
+      tags: ["Comment"]
+      operationId: getComments
+      description: Retrieve all comments associated with a specific photo
+      security:
+        - bearerAuth: []
+      parameters:
+        - name: photoId
+          in: path
+          description: unique identifier of the photo
+          required: true
+          schema:
+            $ref: '#/components/schemas/photoId'
+      responses:
+        '200':
+          description: Successful operation - returns a list of all comments on a photo
+          content:
+            application/json:
+              schema:
+                  $ref: '#/components/schemas/CommentList'
+        '400':
+          description: Bad request - check request parameters
+        '401':
+          description: Unauthorized -user is not authenticated
+        '403':
+          description: Forbidden - the requester is banned by the photo author 
+        '404':
+          description: Photo not found or photo does not have any comments
+        '500':
+          description: Internal server error
+      
+  /photos/{photoId}/comments/{commentId}:
+    delete:
+      operationId: uncommentPhoto
+      tags: ["Comment"]
+      summary: Remove a comment from a photo
+      description: the author of the comment removes it
+      security:
+        - bearerAuth: []
+      parameters:
+        - name: photoId
+          in: path
+          description: ID of the photo containing the comment
+          required: true
+          schema:
+            $ref: '#/components/schemas/photoId'
+        - name: commentId
+          in: path
+          description: ID of the comment to remove
+          required: true
+          schema:
+            type: integer
+            example: 987654321
+      responses:
+        '204':
+          description: Comment removed successfully
+        '401':
+          description: Unauthorized -user is not authenticated
+        '403':
+          description: Forbidden - the requester is not the author of the comment, or user can not access the comment because of the ban
+        '404':
+          description: Photo or comment not found
+        '500':
+          description: Internal server error
+  /users/{username}/followed/:
+    post:
+      operationId: followUser
+      tags: ["Follow"]
+      summary: Follow other user
+      description: follow other users to view their photos in your photo stream, this operation also adds the user to the followed's users list of followers
+      security:
+        - bearerAuth: []
+      parameters:
+        - name: username
+          in: path
+          description: Username of the user that sends a follow request
+          required: true
+          schema:
+            $ref: '#/components/schemas/username'
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/Follow'
+      responses:
+        '201':
+          description: User followed successfully
+          content:
+            application/json:
+              schema: { $ref: "#/components/schemas/Follow" }
+        '409':
+          description: Already following this user
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ConflictResponseFollow'
+        '400':
+          description: Bad request - check request parameters
+        '401':
+          description: Unauthorized -user is not authenticated
+        '403':
+          description: Forbidden - user can not send a follow request because of the ban, or the user can not follow themselves, or the username in bearer token does not match the provided path parameter username
+        '404':
+          description: User not found
+        '500':
+          description: Internal server error
+      x-idempotent: true  # Custom extension to mark the operation as idempotent- a user sending a following request to the same user should be the same as following that user once
+    get:
+      summary: list followed users
+      tags: ["Follow"]
+      operationId: getFollowed
+      description: get a list of users followed by any user
+      security:
+        - bearerAuth: []
+      parameters:
+        - name: username
+          in: path
+          description: Username of the user requesting the list
+          required: true
+          schema:
+            $ref: '#/components/schemas/username'
+      responses:
+        '200':
+          description: Successful request - return followed users
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/FollowedUsers'
+        '400':
+          description: Bad request - check request parameters
+        '401':
+          description: Unauthorized -user is not authenticated
+        '403':
+          description: Forbidden - user can not access because of the ban
+        '404':
+          description: User not found or not following anyone
+        '500':
+          description: Internal server error
+  /users/{username}/followed/{followedUsername}:    
+    delete:
+      operationId: unfollowUser
+      tags: ["Follow"]
+      summary: Unfollow other users
+      description: unfollow other users so to not view their photos in your photo stream
+      security:
+        - bearerAuth: []
+      parameters:
+        - name: username
+          in: path
+          description: Username of the user that sends unfollow request
+          required: true
+          schema:
+            $ref: '#/components/schemas/username'
+        - name: followedUsername
+          in: path
+          description: Username of the user to unfollow
+          required: true
+          schema:
+            $ref: '#/components/schemas/username'
+      responses:
+        '204':
+          description: Successfully unfollowed the user
+        '400':
+          description: Bad request - check request parameters
+        '401':
+          description: Unauthorized -user is not authenticated
+        '403':
+          description: Forbidden - user can not access because of the ban, or the username in bearer token does not match the provided path parameter username
+        '404':
+          description: User not found or not being followed
+        '500':
+          description: Internal server error
+          
+  /users/{username}/banned/:
+    post:
+      operationId: banUser
+      tags: ["Ban"]
+      summary: Ban other users
+      description: ban other users so that they can not view your profile, phots, likes and comments, followers and followed users
+      security:
+        - bearerAuth: []
+      parameters:
+        - name: username
+          in: path
+          description: username of the user sending a ban request
+          required: true
+          schema:
+            $ref: '#/components/schemas/username'
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/BanRequest'
+              
+      responses:
+        '201':
+          description: User banned successfully
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/BanRequest'
+        '400':
+          description: Bad request - check request parameters
+        '401':
+          description: Unauthorized -user is not authenticated
+        '403':
+          description: Forbidden - user can not ban themselves, or the username in bearer token does not match the provided path parameter username
+        '404':
+          description: User not found
+        '409':
+          description: Conflict - User is already banned
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ConflictResponseBan'
+        '500':
+          description: Internal server error 
+      x-idempotent: true  
+      # Custom extension to mark the operation as idempotent- a user sending a ban request for the same user should be the same as banning that user once
+    get:
+      summary: list banned users
+      tags: ["Ban"]
+      operationId: getBanned
+      description: Retrieve the list of users that have been banned by the user
+      security:
+        - bearerAuth: []
+      parameters:
+        - name: username
+          in: path
+          description: username of the user requesting the list
+          required: true
+          schema:
+            $ref: '#/components/schemas/username'
+      responses:
+        '200':
+          description: Successful operation - returns a list of banned users
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/BannedUsers'
+        '400':
+          description: Bad request - check request parameters
+        '401':
+          description: Unauthorized -user is not authenticated
+        '403':
+          description: Forbidden - user can not access other users bannned list, or the username in bearer token does not match the provided path parameter username
+        '404':
+          description: User not found or has not banned anyone
+        '500':
+          description: Internal server error
+          
+  /users/{username}/banned/{bannedUsername}:
+    delete:
+      operationId: unbanUser
+      tags: ["Ban"]
+      summary: Unban other users
+      description: unban other users so they can view your profile, photos, likes and comments
+      security:
+        - bearerAuth: []
+      parameters:
+        - name: username
+          in: path
+          description: Username of the user performing the unban request
+          required: true
+          schema:
+            $ref: '#/components/schemas/username'
+        - name: bannedUsername
+          in: path
+          description: Username of the user to be unbanned
+          required: true
+          schema:
+            $ref: '#/components/schemas/username'
+      responses:
+        '204':
+          description: Successfully unbanned the user
+        '400':
+          description: Bad request - check request parameters
+        '401':
+          description: Unauthorized -user is not authenticated
+        '403':
+          description: Forbidden - user can not unban themselves, or the username in bearer token does not match the provided path parameter username
+        '404':
+          description: User not found or not banned
+        '500':
+          description: Internal server error
+  /users/{username}/photo-stream:
+    get:
+      operationId: getMyStream
+      tags: ["User profile"]
+      summary: Get the photo stream for a user
+      description: |-
+        Each user will be presented with a stream of photos (images) in reverse chronological order, with information about when each photo was uploaded 
+        (date and time) and how many likes and comments it has. The stream is composed by photos from “following” (other users that the user follows) 
+        from resource user/{username}/followed.
+      security:
+        - bearerAuth: []
+      parameters:
+        - name: username
+          in: path
+          description: username of the user requesting the photo stream
+          required: true
+          schema:
+            $ref: '#/components/schemas/username'
+        - name: sinceDateTime
+          in: query
+          description: |-
+            Retrieve photos uploaded since this date and time (ISO 8601 format) (optional)
+          required: false
+          schema:
+            type: string
+            format: date-time
+            minLength: 3
+            maxLength: 40
+            description: date used for filtering photos
+      responses:
+        '200':
+          description: Successful operation- returns the described photostream
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/PhotoList'
+        '400':
+          description: Bad request - check request parameters
+        '401':
+          description: Unauthorized - user is not authenticated
+        '403':
+          description: Forbidden - user is not allowed access other users' photo streams
+        '404':
+          description: User not following anyone
+        '500':
+          description: Internal server error
+  /users/{username}/profile:
+    get:
+      summary: Get user profile information
+      tags: ["User profile"]
+      operationId: getProfile
+      description: Retrieve information for the user's personal profile page - the user’s photos (in reverse chronological order), how many photos have been uploaded, and the user’s followers and following
+      security:
+        - bearerAuth: []
+      parameters:
+        - name: username
+          in: path
+          description: username of the user whose profile is viewed, used also to do a query on /photos collection for those whose author is this username and sort them in descending order by the uploadDateTime paramater
+          required: true
+          schema:
+            $ref: '#/components/schemas/username'
+      responses:
+        '200':
+          description: Successful operation - return user profile
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/UserProfile'
+        '400':
+          description: Bad request - check request parameters
+        '401':
+          description: Unauthorized - user is not authenticated
+        '403':
+          description: Forbidden - user is not allowed access because of the ban
+        '404':
+            description: User not found
+        '500':
+            description: Internal server error
+  /users/{username}/followers/:
+    get:
+      operationId: getUserProfile
+      tags: ["Follow"]
+      summary: list followers of the users
+      description: get a list of all users that follow the specified user
+      security:
+        - bearerAuth: []
+      parameters:
+        - name: username
+          in: path
+          description: Username of the user whose followers list is requested
+          required: true
+          schema:
+            $ref: '#/components/schemas/username'
+      responses:
+        '200':
+          description: Successful request - return this user's followers
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Followers'
+        '400':
+          description: Bad request - check request parameters
+        '401':
+          description: Unauthorized -user is not authenticated
+        '403':
+          description: Forbidden - user can not access because of the ban
+        '404':
+          description: User not found or does not have any followers
+        '500':
+          description: Internal server error      
+          
+  /session:
+    post:
+      operationId: doLogin
+      tags: ["login"]
+      summary: Logs in the user
+      description: |-
+        If the user does not exist, it will be created,
+        and an identifier is returned. If the user exists, the user identifier is returned.
+      requestBody:
+        description: User details
+        content:
+          application/json:
             schema:
               type: object
+              description: username of the user with which it wants to sign up/log in
               properties:
-                userid:
-                  type: string
-                  pattern: '^[a-zA-Z0-9]+$'
-                  minLength: 3
-                  maxLength: 255
-                password:
-                  type: string
-                  pattern: '^.*?$'
-                  minLength: 8
-                  maxLength: 255
+                username:
+                  $ref: '#/components/schemas/username'
+              required: 
+              - username
       responses:
-        "200":
-          description: Login successful
-          headers:
-            X-Access-Token:
-              description: Access token for authenticated requests
-              schema: { type: string }
-        "400": { $ref: "#/components/responses/BadRequest" }
-        "403":
-          description: Login failed
-          headers:
-            X-Message:
-              description: Error message
-              schema: { type: string }
-        "500": { $ref: "#/components/responses/InternalServerError" }
-
-
-components:
-  schemas:
-    StatusInfo:
-      title: Status Info
-      type: object
-      properties:
-        status:
-          type: string
-          enum:
-            - info
-            - warning
-            - critical
-            - ""
-        title: { type: string }
-        message: { type: string }
-        url: { type: string }
-
-  responses:
-    Unauthorized:
-      description: The access token is missing or it's expired
-    BadRequest:
-      description: The request was not compliant with the documentation (eg. missing fields, etc)
-    InternalServerError:
-      description: The server encountered an internal error. Further info in server logs
-
-  securitySchemes:
-    LegacyAuth:
-      type: apiKey
-      in: header
-      name: X-App-Token
-      description: |-
-        App session token value. This value is sent by the server in the login
-        and session refresh APIs.
-
-  parameters:
-    XAppVersion:
-      schema:
-        type: string
-        pattern: '^(0|[1-9]\d*)\.(0|[1-9]\d*)\.(0|[1-9]\d*)(?:-((?:0|[1-9]\d*|\d*[a-zA-Z-][0-9a-zA-Z-]*)(?:\.(?:0|[1-9]\d*|\d*[a-zA-Z-][0-9a-zA-Z-]*))*))?(?:\+([0-9a-zA-Z-]+(?:\.[0-9a-zA-Z-]+)*))?$'
-        minLength: 1
-        maxLength: 10
-      name: X-App-Version
-      in: header
-      required: true
-      description: App human readable version ("semantic version" format)
-      allowEmptyValue: false
-    XAppBuild:
-      schema: { type: integer }
-      name: X-App-Build
-      in: header
-      required: true
-      description: App build number
-      allowEmptyValue: false
-    XAppLanguage:
-      schema:
-        type: string
-        pattern: '^[a-z]{2}([-_][A-Z]{2})?$'
-        minLength: 2
-        maxLength: 5
-      name: X-App-Language
-      in: header
-      required: true
-      description: App language in ISO 639-1 format
-      allowEmptyValue: false
-    XAppPlatform:
-      schema:
-        type: string
-        enum: [ios, android]
-      name: X-App-Platform
-      in: header
-      required: true
-      description: App operating system / platform
-      allowEmptyValue: false
-    cat:
-      schema:
-        type: string
-        pattern: '^[a-zA-Z]+$'
-        minLength: 3
-        maxLength: 10
-      name: cat
-      in: path
-      required: true
-      description: Cat
-      allowEmptyValue: false
+        '200':
+          description: User log-in action successful
+          content:
+            application/json:
+              schema: 
+                type: object
+                description: returning username and path to existing user resource
+                properties:
+                  identifier:
+                      $ref: '#/components/schemas/username'
+                  existingUserResource: 
+                    $ref: '#/components/schemas/User'
+        
+        '201':
+          description: New user created and authenticated
+          content:
+            application/json:
+              schema: 
+                type: object
+                description: returning username and path to the new user resource
+                properties:
+                  identifier:
+                      $ref: '#/components/schemas/username'
+                  newUserResourceUrl: 
+                      $ref: '#/components/schemas/User'
+        '400':
+          description: Invalid request body
+        '500':
+          description: Internal server error
+  /users/{username}:
+    put:
+      summary: Change username
+      tags: ["login"]
+      operationId: setMyUserName
+      description: Change the username for a user while keeping data associated with its previous username
+      security:
+        - bearerAuth: []
+      parameters:
+        - name: username
+          in: path
+          description: Current username of the user
+          required: true
+          schema:
+            $ref: '#/components/schemas/username'
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              type: object
+              description: the desired username chosen by the user
+              properties:
+                newUsername:
+                  $ref: '#/components/schemas/username'
+      responses:
+        '200':
+          description: Username changed successfully
+          content:
+            application/json:
+              schema: 
+                type: object
+                description: returns new username and new user resource
+                properties:
+                  newUsername: 
+                    $ref: '#/components/schemas/username'
+                  userResource:
+                    $ref: '#/components/schemas/User'
+        '400':
+          description: Bad request - check request parameters
+        '401':
+          description: Unauthorized - user not authenticated
+        '403':
+          description: Forbidden - path parameter does not match the authorization token
+        '404':
+          description: User not found
+        '409':
+          description: Username already in use
+        '500':
+          description: Internal server error
+              
+              
+              
+              
