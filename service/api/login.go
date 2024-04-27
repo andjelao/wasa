@@ -25,8 +25,8 @@ import (
 // photostream []PhotoMultipart `json:"photostream"`
 // }
 type UserReply struct {
-	Identifier   string        `json:"identifier"`
-	UserResource database.User `json:"userResource"`
+	Identifier   string        `json:"Identifier"`
+	UserResource database.User `json:"UserResource"`
 }
 type LoginRequest struct {
 	Username string `json:"username"`
@@ -56,9 +56,11 @@ func (rt *_router) login(w http.ResponseWriter, r *http.Request, ps httprouter.P
 			return
 		}
 	}
+	var exist bool = false
 	if authenticated {
 		//
 		user, err = rt.db.Login(loginReq.Username)
+		exist = true
 	} else {
 		//
 		user, err = rt.db.CreateUser(loginReq.Username)
@@ -103,7 +105,11 @@ func (rt *_router) login(w http.ResponseWriter, r *http.Request, ps httprouter.P
 	}
 	// Set content type header.
 	w.Header().Set("Content-Type", "application/json")
-	w.WriteHeader(http.StatusOK)
+	if exist {
+		w.WriteHeader(http.StatusOK)
+	} else {
+		w.WriteHeader(http.StatusCreated)
+	}
 	// Write the JSON response back to the client.
 	_, err = w.Write(jsonResponse)
 	if err != nil {

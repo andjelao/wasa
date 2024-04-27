@@ -1049,9 +1049,9 @@ paths:
                 type: object
                 description: returning username and path to existing user resource
                 properties:
-                  identifier:
+                  Identifier:
                       $ref: '#/components/schemas/username'
-                  existingUserResource: 
+                  UserResource: 
                     $ref: '#/components/schemas/User'
         
         '201':
@@ -1062,9 +1062,9 @@ paths:
                 type: object
                 description: returning username and path to the new user resource
                 properties:
-                  identifier:
+                  Identifier:
                       $ref: '#/components/schemas/username'
-                  newUserResourceUrl: 
+                  UserResource: 
                       $ref: '#/components/schemas/User'
         '400':
           description: Invalid request body
@@ -1104,9 +1104,9 @@ paths:
                 type: object
                 description: returns new username and new user resource
                 properties:
-                  newUsername: 
+                  Identifier: 
                     $ref: '#/components/schemas/username'
-                  userResource:
+                  UserResource:
                     $ref: '#/components/schemas/User'
         '400':
           description: Bad request - check request parameters
