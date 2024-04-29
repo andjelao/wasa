@@ -298,7 +298,7 @@ components:
       properties:
         username:
           $ref: '#/components/schemas/username'
-        total_photos:
+        photosCount:
           type: integer
           description: Total number of photos uploaded by the user
           readOnly: true
