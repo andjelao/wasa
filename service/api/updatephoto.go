@@ -47,7 +47,7 @@ func (rt *_router) updatePhoto(w http.ResponseWriter, r *http.Request, ps httpro
 		http.Error(w, "Photo ID is required", http.StatusBadRequest)
 		return
 	}
-	photoID, err := strconv.Atoi(ps.ByName("photoId"))
+	photoID, err := strconv.ParseInt(photoIDD, 10, 64)
 	if err != nil {
 		// fmt.Println("Error converting string to int:", err)
 		http.Error(w, "Internal server error", http.StatusInternalServerError)

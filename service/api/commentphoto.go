@@ -11,7 +11,8 @@ import (
 	// "mime"
 	"database/sql"
 	"errors"
-	"math/rand"
+
+	// "math/rand"
 	"strconv"
 	"time"
 
@@ -52,7 +53,7 @@ func (rt *_router) commentPhoto(w http.ResponseWriter, r *http.Request, ps httpr
 		return
 	}
 
-	photoId, err := strconv.Atoi(ps.ByName("photoId"))
+	photoId, err := strconv.ParseInt(photoIdd, 10, 64)
 	if err != nil {
 		http.Error(w, "Internal server error-error converting photoid to string", http.StatusInternalServerError)
 		return
@@ -82,26 +83,29 @@ func (rt *_router) commentPhoto(w http.ResponseWriter, r *http.Request, ps httpr
 
 	// Decode the JSON request body
 	var newComment database.Comment
+	var commentText database.CommentText
 	// var comm string
-	if err := json.NewDecoder(r.Body).Decode(&newComment.Text); err != nil {
+	if err := json.NewDecoder(r.Body).Decode(&commentText); err != nil {
 		http.Error(w, "Failed to decode JSON body", http.StatusBadRequest)
 		return
 	}
-	// newComment.Text = comm
+	newComment.Text = commentText.Text
 	newComment.PhotoId = photoId
 	newComment.Author = username
 	// Calculate upload date and time
 	uploadDateTime := time.Now().Format(time.RFC3339)
 	newComment.Date = uploadDateTime
-	commentId := rand.Int()
-	newComment.CommentId = commentId
+	// commentId := rand.Int()
+	// newComment.CommentId = commentId
 
 	//
 	// Save the updated photo back to the database
-	if err := rt.db.AddComment(newComment); err != nil {
+	var idd int64
+	if idd, err = rt.db.AddComment(newComment); err != nil {
 		http.Error(w, "Failed to add comment in the database", http.StatusInternalServerError)
 		return
 	}
+	newComment.CommentId = idd
 
 	// respond with a comment
 	jsonResponse, err := json.Marshal(newComment)

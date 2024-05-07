@@ -4,6 +4,7 @@ import (
 	// "database/sql"
 
 	"database/sql"
+	"encoding/base64"
 	"errors"
 	"strings"
 	"time"
@@ -90,21 +91,29 @@ func (db *appdbimpl) PhotoStream(username string, sinceDateTime string) ([]Photo
 		if err := rows.Scan(&photo.PhotoId, &photo.Photo, &photo.Author, &photo.UploadDateTime, &photo.Location, &photo.Caption); err != nil {
 			return nil, err
 		}
+
+		if len(photo.Photo) > 0 {
+			photo.PhotoEncoded = base64.StdEncoding.EncodeToString(photo.Photo)
+			// fmt.Println("encoded" + photo.PhotoEncoded)
+			photo.Photo = nil
+
+		}
+
 		// populate likes i like count
-		var likes []Like
+
 		photo.Likes, err = db.GetLikes(photo.PhotoId)
 		if err != nil {
 			return photos, err
 		}
-		photo.LikesCount = len(likes)
+		photo.LikesCount = len(photo.Likes)
 
 		// populate comments
-		var comments []Comment
+
 		photo.Comments, err = db.GetComments(photo.PhotoId)
 		if err != nil {
 			return photos, err
 		}
-		photo.CommentsCount = len(comments)
+		photo.CommentsCount = len(photo.Comments)
 		photos = append(photos, photo)
 	}
 	if err := rows.Err(); err != nil {

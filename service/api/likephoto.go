@@ -2,6 +2,7 @@ package api
 
 import (
 	"encoding/json"
+	// "fmt"
 	"net/http"
 
 	"git.sapienzaapps.it/fantasticcoffee/fantastic-coffee-decaffeinated/service/api/reqcontext"
@@ -33,6 +34,8 @@ import (
 
 // like a photo
 func (rt *_router) likePhoto(w http.ResponseWriter, r *http.Request, ps httprouter.Params, ctx reqcontext.RequestContext) {
+	// e := rt.db.GetTables()
+	// fmt.Println(e)
 	username := GetUsernameFromToken(r)
 	// Check if the author exists in the database of authenticated users and is logged in
 	authenticated, err := rt.db.IsAuthenticatedUser(username)
@@ -53,9 +56,10 @@ func (rt *_router) likePhoto(w http.ResponseWriter, r *http.Request, ps httprout
 		http.Error(w, "Photo ID is required", http.StatusBadRequest)
 		return
 	}
-	photoId, err := strconv.Atoi(ps.ByName("photoId"))
+	photoId, err := strconv.ParseInt(photoIdd, 10, 64)
+	// fmt.Println("photoid", photoId)
 	if err != nil {
-		http.Error(w, "Internal server error- error converting photoid to string", http.StatusInternalServerError)
+		http.Error(w, "Internal server error- error converting photoid to int", http.StatusInternalServerError)
 		return
 	}
 
@@ -68,7 +72,7 @@ func (rt *_router) likePhoto(w http.ResponseWriter, r *http.Request, ps httprout
 	//
 	likeExists, err := rt.db.LikeExists(like)
 	if err != nil {
-		http.Error(w, "Internal server error", http.StatusInternalServerError)
+		http.Error(w, "Internal server error-error checking if like exists", http.StatusInternalServerError)
 		return
 	}
 	if likeExists {
@@ -81,7 +85,7 @@ func (rt *_router) likePhoto(w http.ResponseWriter, r *http.Request, ps httprout
 		jsonResponseLike, err := json.Marshal(response)
 		if err != nil {
 			// If there's an error in marshalling JSON, return an internal server error
-			http.Error(w, "Internal server error", http.StatusInternalServerError)
+			http.Error(w, "Internal server error-error marshalling response", http.StatusInternalServerError)
 			return
 		}
 
@@ -91,7 +95,7 @@ func (rt *_router) likePhoto(w http.ResponseWriter, r *http.Request, ps httprout
 		_, err = w.Write(jsonResponseLike)
 		if err != nil {
 			// Handle error if writing response fails.
-			http.Error(w, "Internal Server Error", http.StatusInternalServerError)
+			http.Error(w, "Internal Server Error-error writing response", http.StatusInternalServerError)
 			return
 		}
 		return
@@ -107,9 +111,11 @@ func (rt *_router) likePhoto(w http.ResponseWriter, r *http.Request, ps httprout
 		// Handle error
 		if errors.Is(err, sql.ErrNoRows) {
 			http.Error(w, "Photo not found", http.StatusNotFound)
+			// fmt.Println(err)
 			return
 		} else {
-			http.Error(w, "Internal server error", http.StatusInternalServerError)
+			http.Error(w, "Internal server error- error finding photo", http.StatusInternalServerError)
+			// fmt.Println(err)
 			return
 		}
 	}
@@ -123,14 +129,14 @@ func (rt *_router) likePhoto(w http.ResponseWriter, r *http.Request, ps httprout
 			http.Error(w, "Photo not found", http.StatusNotFound)
 			return
 		} else {
-			http.Error(w, "Internal server error", http.StatusInternalServerError)
+			http.Error(w, "Internal server error-error getting author", http.StatusInternalServerError)
 			return
 		}
 	}
 	//
 	banned, err := rt.db.BanExists(author, username)
 	if err != nil {
-		http.Error(w, "Internal server error", http.StatusInternalServerError)
+		http.Error(w, "Internal server error-error checking if ban exists", http.StatusInternalServerError)
 		return
 	}
 	if banned {
@@ -143,13 +149,13 @@ func (rt *_router) likePhoto(w http.ResponseWriter, r *http.Request, ps httprout
 	err = rt.db.AddLike(like)
 	if err != nil {
 		// Handle error
-		http.Error(w, "Internal server error", http.StatusInternalServerError)
+		http.Error(w, "Internal server error-error adding like to database", http.StatusInternalServerError)
 		return
 	}
 	jsonResponse, err := json.Marshal(like)
 	if err != nil {
 		// Handle error
-		http.Error(w, "Internal server error", http.StatusInternalServerError)
+		http.Error(w, "Internal server error-error marshalling like response", http.StatusInternalServerError)
 		return
 	}
 
@@ -158,7 +164,7 @@ func (rt *_router) likePhoto(w http.ResponseWriter, r *http.Request, ps httprout
 	_, err = w.Write(jsonResponse)
 	if err != nil {
 		// Handle error if writing response fails.
-		http.Error(w, "Internal Server Error", http.StatusInternalServerError)
+		http.Error(w, "Internal Server Error-error writing like response", http.StatusInternalServerError)
 		return
 	}
 

@@ -5,7 +5,7 @@ import (
 	"fmt"
 )
 
-func (db *appdbimpl) DeleteComment(commentID int, photoID int) error {
+func (db *appdbimpl) DeleteComment(commentID int, photoID int64) error {
 
 	// Delete the comment from the database where both comment ID and photo ID match
 	_, err := db.c.Exec("DELETE FROM comments WHERE comment_id = ? AND photo_id = ?", commentID, photoID)

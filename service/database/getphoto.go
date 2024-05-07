@@ -7,7 +7,7 @@ import (
 	"fmt"
 )
 
-func (db *appdbimpl) GetPhoto(photoID int) (PhotoMultipart, error) {
+func (db *appdbimpl) GetPhoto(photoID int64) (PhotoMultipart, error) {
 	// Prepare the SQL query to retrieve the photo data
 	query := "SELECT photo, photo_id, author, upload_datetime, location, caption FROM photos WHERE photo_id = ?"
 
@@ -15,7 +15,7 @@ func (db *appdbimpl) GetPhoto(photoID int) (PhotoMultipart, error) {
 	row := db.c.QueryRow(query, photoID)
 
 	// Initialize variables to store the retrieved photo data
-	var photoData string
+	var photoData []byte
 	var photo PhotoMultipart
 
 	// Scan the row to extract photo data

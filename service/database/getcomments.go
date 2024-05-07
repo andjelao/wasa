@@ -6,7 +6,7 @@ import (
 )
 
 // GetComments retrieves all comments associated with the given photo ID.
-func (db *appdbimpl) GetComments(photoID int) ([]Comment, error) {
+func (db *appdbimpl) GetComments(photoID int64) ([]Comment, error) {
 	// Prepare SQL statement to select comments for the given photo ID
 	query := "SELECT comment_id, photo_id, username, text, date FROM comments WHERE photo_id = ?"
 	rows, err := db.c.Query(query, photoID)

@@ -6,7 +6,7 @@ import (
 )
 
 // GetLikes returns all likes associated with the given photo ID.
-func (db *appdbimpl) GetLikes(photoId int) ([]Like, error) {
+func (db *appdbimpl) GetLikes(photoId int64) ([]Like, error) {
 	// SQL query to select likes for the given photoId
 	query := "SELECT username FROM likes WHERE photo_id = ?"
 

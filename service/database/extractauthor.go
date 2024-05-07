@@ -7,7 +7,7 @@ import (
 	"fmt"
 )
 
-func (db *appdbimpl) ExtractAuthor(photoID int) (string, error) {
+func (db *appdbimpl) ExtractAuthor(photoID int64) (string, error) {
 	// Execute the SELECT statement to retrieve the author of the photo
 	var author string
 	err := db.c.QueryRow("SELECT author FROM photos WHERE photo_id = ?", photoID).Scan(&author)

@@ -1,5 +1,16 @@
+<script setup>
+import LoadingSpinner from '../components/LoadingSpinner.vue'
+import Stream_Photo from '../components/Stream.vue';
+</script>
+
+
 <script>
 export default {
+
+    components: {
+        LoadingSpinner,
+        Stream_Photo
+  },
 	data: function() {
 		return {
 			errormsg: null,
@@ -19,6 +30,12 @@ export default {
             followed: [],
             bannedList: [],
             searchQuery: "",
+            caption: "",
+
+
+            
+            posts: [],
+            photos: [],
 		}
 	},
 
@@ -29,7 +46,10 @@ export default {
         // Perform actions based on the changes to the route parameter 'username'
         if (newVal !== oldVal){
                 this.errormsg=null
+                this.photos=[]
+                console.log(this.photos)
                 this.refresh();
+                console.log("new user event")
 				return;
             }
     }
@@ -45,6 +65,7 @@ export default {
             const pattern = /^(?=.{3,16}$)(^.*?$)$/;
 			return pattern.test(username);
         },
+
         async changeUsername() {
 
             if (this.validateUsername(this.newUsername)) {
@@ -91,6 +112,38 @@ export default {
                     }
         },
 
+        async postPhoto(){
+            // Retrieve authentication token from localStorage
+            const token = localStorage.getItem("token");
+            // Set authorization header
+            const headers = { Authorization: `Bearer ${token}` };
+
+            this.loading = true;
+            this.errormsg = null;
+
+            const image = document.getElementById("fileInput").files[0];
+            document.getElementById("fileInput").value = "";
+
+            try {
+                console.log(image)
+                let fd = new FormData();
+                fd.append("photo", image);
+                console.log("appended photo")
+                fd.append("caption", this.caption);
+                let response = await this.$axios.post("/photos/", fd,{ headers })
+                this.postsNumber+=1
+                this.photos.unshift(response.data.photo);
+
+            } catch (error) {
+                this.errormsg= "Error while uploading the photo"
+            }
+            this.loading = false;
+            this.caption=""
+           
+            document.querySelector('#newPostModal .btn-close').click();
+            
+        },
+
         async refresh() {
             this.username= localStorage.getItem("token")
             this.myProfile()
@@ -108,6 +161,7 @@ export default {
                     const headers = { Authorization: `Bearer ${token}` };
                     try {
                         let response = await this.$axios.get("/users/" +this.profile_username+"/profile",{ headers })
+                        this.photos = response.data.userPhotos
                         // update followers
                         if (response.data.followersCount == null) {
                             this.followersNumber = 0;
@@ -163,7 +217,7 @@ export default {
                             let followResponse = await this.$axios.post("/users/" +this.username+"/followed/", {
                                 followedUsername: this.profile_username},{ headers })
                             this.isFollower = false;
-                            this.Unfollow()
+                            await this.$axios.delete("/users/" +this.username+"/followed/"+this.profile_username,{ headers })
                         }catch (error){
                             if (error.response.status === 409) {
                                 // Set the 'isFollower' variable to true
@@ -185,6 +239,7 @@ export default {
                                 this.isBanned = false;
                             }
                         }
+                        
                      } catch (error){
                         if (error.response.status === 403) {
                             // Set the 'banned' variable to true
@@ -203,6 +258,9 @@ export default {
                 // Set authorization header
                 const headers = { Authorization: `Bearer ${token}` };
                 let response = await this.$axios.get("/users/" +this.profile_username+"/profile",{ headers })
+
+                this.photos = response.data.userPhotos
+
 
                 // update followers
                 if (response.data.followersCount == null) {
@@ -261,7 +319,19 @@ export default {
             const headers = { Authorization: `Bearer ${token}` };
             await this.$axios.delete("/users/" +this.username+"/followed/"+this.profile_username,{ headers })
             this.isFollower = false
-            this.followersNumber=-1
+            this.followersNumber-=1
+
+            try {
+            let response= await this.$axios.get("/users/" +this.profile_username+"/followers/",{ headers })
+            this.followers= response.data
+
+            }
+            catch(error){ 
+                if (error.response.status === 404) {
+                    this.followers =  []
+                }
+               }
+            
         },
 
         async Follow() {
@@ -272,7 +342,10 @@ export default {
             await this.$axios.post("/users/" +this.username+"/followed/", {
                         followedUsername: this.profile_username},{ headers })
             this.isFollower = true
-            this.followersNumber=+1
+            this.followersNumber+=1
+            let response= await this.$axios.get("/users/" +this.profile_username+"/followers/",{ headers })
+            this.followers= response.data
+            
         },
 
         async Unban() {
@@ -293,10 +366,22 @@ export default {
                         BannedUsername: this.profile_username},{ headers })
             this.isBanned = true
         },
+         async delPost(post) {
+            console.log("post: " + post)
+            for (let i = 0; i < this.photos.length; i++) {
+                if (this.photos[i].photoId === post.photoId) {
+                    console.log("found ")
+                    this.photos.splice(i, 1);
+                    i--;
+                }
+
+            };
+            this.postsNumber -= 1;
+            },
 
         async searchUser(){
             this.$router.push("/"+this.searchQuery+"/profile");
-            this.refresh()
+            //this.refresh()
         },
 
         
@@ -313,10 +398,23 @@ export default {
 
 		<header class="navbar navbar-dark sticky-top bg-primary flex-md-nowrap p-0 shadow">
 			<a class="navbar-brand col-md-3 col-lg-2 me-0 px-3 fs-6" href="#/">WasaPhoto</a>
+            <router-link :to="'/'+username+'/profile'" class="nav-link">  
+                <svg class="feather">
+                    <use href="/feather-sprite-v4.29.0.svg#user" />
+                </svg>
+                My profile
+            </router-link>
+            <router-link :to="'/' + username + '/photostream'" class="nav-link">
+                <svg class="feather">
+                    <use href="/feather-sprite-v4.29.0.svg#image" />
+                </svg>
+                My Photostream
+            </router-link>
 			<form class="d-flex" @submit.prevent="searchUser">
                 <input class="form-control me-2" type="search" placeholder="Search users" aria-label="Search"  v-model="searchQuery">
                 <button class="btn btn-outline-light border-0" type="submit" :disabled="searchQuery.trim() === ''">Search</button>
             </form>
+            
 		</header>
 		<ErrorMsg v-if="errormsg" :msg="errormsg"></ErrorMsg>
 
@@ -332,9 +430,15 @@ export default {
                         </div>
 
                         <div v-else-if="myprofile" style="margin-bottom: 20px;margin-top: 20px;">
-                            <button class="btn btn-primary btn-md" type="button" @click="toggleChangeUsernameInput()">
+                        
+                            <button class="btn btn-primary btn-md ms-4" type="button" @click="toggleChangeUsernameInput()">
                                 Change username
                             </button>
+
+                            <button class="btn btn-primary btn-md ms-4" type="button" data-bs-toggle="modal" data-bs-target="#newPostModal">
+                                Add new post
+                            </button>
+                        
                             <br><br>
                             <div v-if="showChangeUsernameInput">
                                 <input v-model="newUsername" type="text" placeholder="Type new username..." />
@@ -343,7 +447,7 @@ export default {
                             </div>
                         </div>
         
-                        <div v-if="!myprofile" style="margin-bottom: 20px; margin-top: 20px;">
+                        <div v-else-if="!myprofile" style="margin-bottom: 20px; margin-top: 20px;">
                             <div class="row">
                                 <div class="col-md-6 mb-2">            
                                             
@@ -396,7 +500,7 @@ export default {
 
                     <div class="col col-sm-1" style="font-size: medium;">
                         <button type="button" class="btn btn-primary" data-bs-toggle="modal" data-bs-target="#followedModal">
-                        <strong>Followed</strong>
+                        <strong>Following</strong>
                         </button>
                     </div>
                     <div class="col col-sm-1" style="font-size: medium;">
@@ -427,7 +531,7 @@ export default {
                         <div class="modal-body">
                             <ul>
                             <!-- Iterate over followers and display their names -->
-                            <li v-for="follower in followers" :key="follower.followerUsername">{{ follower.followerUsername}}</li>
+                            <li v-for="follower in followers" :key="follower.followerUsername"><strong>@{{ follower.followerUsername}}</strong></li>
                             </ul>
                         </div>
                         </div>
@@ -439,13 +543,13 @@ export default {
                     <div class="modal-dialog modal-dialog-centered">
                         <div class="modal-content">
                         <div class="modal-header">
-                            <h5 class="modal-title" id="followedModalLabel">Followed</h5>
+                            <h5 class="modal-title" id="followedModalLabel">Following</h5>
                             <button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Close"></button>
                         </div>
                         <div class="modal-body">
                             <ul>
                             <!-- Iterate over followers and display their names -->
-                            <li v-for="followed in followed" :key="followed.followedUsername">{{ followed.followedUsername}}</li>
+                            <li v-for="followed in followed" :key="followed.followedUsername"><strong>@{{ followed.followedUsername}}</strong></li>
                             </ul>
                         </div>
                         </div>
@@ -463,7 +567,7 @@ export default {
                             <div class="modal-body">
                                 <ul>
                                 <!-- Iterate over followers and display their names -->
-                                <li v-for="user in bannedList" :key="user.BannedUsername">{{ user.BannedUsername}}</li>
+                                <li v-for="user in bannedList" :key="user.bannedUsername"><strong>@{{ user.bannedUsername}}</strong></li>
                                 </ul>
                             </div>
                         </div>
@@ -471,8 +575,49 @@ export default {
                 </div>
 
 
+                <!-- new post Modal -->
+                <div class="modal fade" id="newPostModal" tabindex="-1" aria-labelledby="newPostModalLabel" aria-hidden="true">
+                    <div class="modal-dialog modal-dialog-centered">
+                        <div class="modal-content">
+                            <div class="modal-header">
+                                <h5 class="modal-title" id="newPostModalLabel">Add new post</h5>
+                                <button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Close"></button>
+                            </div>
+                            <div class="modal-body">
+                                <form @submit.prevent="postPhoto" class="form-container"
+                            enctype="multipart/form-data">
+                            
+                            
+                            <input class="form-control" type="file" id="fileInput" accept="image/jpeg, image/png"
+                                style="width:fit-content;">
+                            <br>  
+                             <div class="mb-3">
+                                <label for="captionInput" class="form-label">Caption:</label>
+                                <input type="text" class="form-control" id="captionInput" v-model="caption">
+                            </div>
+                            <br>
+                            <button type="submit" class="btn btn-success btn-sm" id="submitBut">Upload</button>
+                            <br>
+                        </form>
+                                
+                            </div>
+                        </div>
+                    </div>
+                </div>
+
+                <div v-if="!banned" class="col">
+                <Stream_Photo :posts="photos"  @delete-post="delPost"></Stream_Photo>
+                <div>
+                <div v-if="loading">
+                    <LoadingSpinner></LoadingSpinner>
+                </div>
+                </div>
             </div>
-        </div>        
+
+                
+            </div>
+        </div>  
+        <RouterView></RouterView>      
     </main>
 </template>
 <style></style>

@@ -2,6 +2,7 @@ package api
 
 import (
 	"encoding/json"
+	// "fmt"
 	"net/http"
 
 	"github.com/julienschmidt/httprouter"
@@ -74,6 +75,9 @@ func (rt *_router) getProfile(w http.ResponseWriter, r *http.Request, ps httprou
 	// get photostream from database
 	var profile database.Profile
 	profile, err = rt.db.GetProfile(pathusername)
+	// for _, photo := range profile.UserPhotos {
+	// fmt.Println("for loop", photo.PhotoId)
+	// }
 
 	if err != nil {
 		// Handle error if retrieving profile from the database fails.
@@ -83,6 +87,17 @@ func (rt *_router) getProfile(w http.ResponseWriter, r *http.Request, ps httprou
 
 	// Serialize the profile into JSON format.
 	jsonResponse, err := json.Marshal(profile)
+	// fmt.Println(string(jsonResponse))
+
+	// Unmarshal the JSON response into a Response struct
+	var proba database.Profile
+	err = json.Unmarshal(jsonResponse, &proba)
+
+	// Print the photoId of each object in the userPhotos array
+	// for _, photo := range proba.UserPhotos {
+	// fmt.Println("PhotoId of unmarshalled:", photo.PhotoId)
+	// }
+
 	if err != nil {
 		// Handle error if serialization fails.
 		http.Error(w, "Internal Server Error", http.StatusInternalServerError)

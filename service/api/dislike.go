@@ -27,7 +27,7 @@ func (rt *_router) dislike(w http.ResponseWriter, r *http.Request, ps httprouter
 		http.Error(w, "Photo ID is required", http.StatusBadRequest)
 		return
 	}
-	photoId, err := strconv.Atoi(ps.ByName("photoId"))
+	photoId, err := strconv.ParseInt(photoIdd, 10, 64)
 	if err != nil {
 		http.Error(w, "Internal server error- error converting photoid to string", http.StatusInternalServerError)
 		return

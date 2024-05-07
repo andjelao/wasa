@@ -1,7 +1,10 @@
 package api
 
 import (
+	"encoding/base64"
 	"encoding/json"
+
+	// "fmt"
 	"net/http"
 
 	"github.com/julienschmidt/httprouter"
@@ -10,14 +13,13 @@ import (
 	// "log"
 	"io/ioutil"
 	// "mime"
-	"encoding/base64"
+
 	"time"
 
 	"git.sapienzaapps.it/fantasticcoffee/fantastic-coffee-decaffeinated/service/api/reqcontext"
 	"git.sapienzaapps.it/fantasticcoffee/fantastic-coffee-decaffeinated/service/database"
-
 	// "fantastic-coffee-decaffeinated/service/api/models"
-	"math/rand"
+	// "math/rand"
 )
 
 // //////////////////////////////
@@ -85,7 +87,7 @@ func (rt *_router) uploadPhoto(w http.ResponseWriter, r *http.Request, ps httpro
 	}
 
 	// Encode photo data using base64
-	encodedPhoto := base64.StdEncoding.EncodeToString(photoData)
+	// encodedPhoto := base64.StdEncoding.EncodeToString(photoData)
 
 	// Get other form fields
 	// treba li da provjeravam validnost stringova paterne duzinu i ostalo
@@ -109,12 +111,13 @@ func (rt *_router) uploadPhoto(w http.ResponseWriter, r *http.Request, ps httpro
 
 	// Calculate upload date and time
 	uploadDateTime := time.Now().Format(time.RFC3339)
-	photoId := rand.Int()
+	// photoId := rand.Int63()
+	// fmt.Println("generated id", photoId)
 
 	// Create PhotoMultipart object
 	photo := database.PhotoMultipart{
-		Photo:          encodedPhoto,
-		PhotoId:        photoId,
+		Photo: photoData,
+		// PhotoId:        photoId,
 		Caption:        caption,
 		Location:       location,
 		Author:         author,
@@ -124,16 +127,22 @@ func (rt *_router) uploadPhoto(w http.ResponseWriter, r *http.Request, ps httpro
 		CommentsCount:  0, // Default value for comments
 		Comments:       make([]database.Comment, 0),
 	}
-
+	// fmt.Println(photo)
+	// fmt.Println(photo.LikesCount)
 	// Do something with the photo data, such as saving it to a database or storage
 	// kako da stavim u bazu
 	// Insert photo into the database
-	if err := rt.db.InsertPhoto(photo); err != nil {
+	riid, err := rt.db.InsertPhoto(photo)
+	if err != nil {
 		// Handle error if insertion fails
+		// fmt.Println(err)
 		http.Error(w, "Error inserting photo into the database", http.StatusInternalServerError)
 		return
 	}
-
+	photo.PhotoEncoded = base64.StdEncoding.EncodeToString(photo.Photo)
+	// fmt.Println("encoded" + photo.PhotoEncoded)
+	photo.Photo = nil
+	photo.PhotoId = riid
 	// Respond with success message
 	response := UpdateResponse{
 		Message: "Photo updated successfully",

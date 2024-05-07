@@ -3,7 +3,13 @@ package database
 import (
 	// "fantastic-coffee-decaffeinated/service/api/models"
 	"database/sql"
+	"encoding/base64"
+
+	// "encoding/base64"
+
+	// "encoding/base64"
 	"errors"
+	"fmt"
 )
 
 func (db *appdbimpl) GetProfile(username string) (Profile, error) {
@@ -110,20 +116,30 @@ func (db *appdbimpl) GetProfile(username string) (Profile, error) {
 			return profile, err
 		}
 		// populate likes i like count
-		var likes []Like
+		fmt.Println("database reads", photo.PhotoId)
+
 		photo.Likes, err = db.GetLikes(photo.PhotoId)
 		if err != nil {
 			return profile, err
 		}
-		photo.LikesCount = len(likes)
-
+		photo.LikesCount = len(photo.Likes)
+		fmt.Println(photo.LikesCount)
+		fmt.Println(photo.CommentsCount)
 		// populate comments
-		var comments []Comment
+
 		photo.Comments, err = db.GetComments(photo.PhotoId)
 		if err != nil {
 			return profile, err
 		}
-		photo.CommentsCount = len(comments)
+		photo.CommentsCount = len(photo.Comments)
+
+		if len(photo.Photo) > 0 {
+			photo.PhotoEncoded = base64.StdEncoding.EncodeToString(photo.Photo)
+			// fmt.Println("encoded" + photo.PhotoEncoded)
+			photo.Photo = nil
+
+		}
+
 		photos = append(photos, photo)
 	}
 

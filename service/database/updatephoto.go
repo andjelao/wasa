@@ -8,7 +8,7 @@ import (
 )
 
 // UpdatePhoto updates the photo's caption and location based on the provided photoID.
-func (db *appdbimpl) UpdatePhoto(photoID int, req UpdateRequest) error {
+func (db *appdbimpl) UpdatePhoto(photoID int64, req UpdateRequest) error {
 	// Prepare SQL statement to update the photo
 	sqlStmt := `UPDATE photos SET caption = ?, location = ? WHERE photo_id = ?`
 

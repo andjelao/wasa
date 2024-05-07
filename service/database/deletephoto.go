@@ -8,7 +8,7 @@ import (
 )
 
 // deletePhoto deletes a photo with the given photoId from the database.
-func (db *appdbimpl) DeletePhoto(photoId int) error {
+func (db *appdbimpl) DeletePhoto(photoId int64) error {
 	// Prepare the SQL statement to delete the photo from the database.
 	sqlStmt := "DELETE FROM photos WHERE photo_id= ?"
 

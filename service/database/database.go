@@ -42,8 +42,8 @@ type Ban struct {
 }
 
 type Comment struct {
-	CommentId int    `json:"commentId"`
-	PhotoId   int    `json:"photoId"`
+	CommentId int64  `json:"commentId"`
+	PhotoId   int64  `json:"photoId"`
 	Author    string `json:"author"`
 	Text      string `json:"text"`
 	Date      string `json:"date"`
@@ -52,25 +52,26 @@ type Followed struct {
 	Following string `json:"followedUsername"`
 }
 type Follower struct {
-	Follower string `json:"follower"`
+	Follower string `json:"followerUsername"`
 }
 type Like struct {
 	Username string `json:"username"`
-	PhotoId  int    `json:"photoId"`
+	PhotoId  int64  `json:"photoId"`
 }
 type PhotoMultipart struct {
 	// koji format da stavim da li jpg ili ovako bytes
-	Photo string `json:"photo"`
+	Photo []byte `json:"photo"`
 	//
-	PhotoId        int       `json:"photoId"`
+	PhotoId        int64     `json:"photoId"`
 	Author         string    `json:"author"`
 	UploadDateTime string    `json:"uploadDateTime"`
 	Location       string    `json:"location,omitempty"`
 	Caption        string    `json:"caption,omitempty"`
-	LikesCount     int       `json:"likesCount,omitempty"`
-	Likes          []Like    `json:"likes,omitempty"`
-	CommentsCount  int       `json:"commentsCount,omitempty"`
-	Comments       []Comment `json:"comments,omitempty"`
+	LikesCount     int       `json:"likesCount"`
+	Likes          []Like    `json:"likes"`
+	CommentsCount  int       `json:"commentsCount"`
+	Comments       []Comment `json:"comments"`
+	PhotoEncoded   string    `json:"photoEncoded"`
 }
 type Profile struct {
 	Username       string           `json:"username"`
@@ -105,32 +106,36 @@ type ConflictResponseLike struct {
 	Like    Like   `json:"like"`
 }
 
+type CommentText struct {
+	Text string `json:"text"`
+}
+
 // AppDatabase is the high level interface for the DB
 type AppDatabase interface {
 	GetName() (string, error)
 	SetName(name string) error
 
-	InsertPhoto(photo PhotoMultipart) error
+	InsertPhoto(photo PhotoMultipart) (int64, error)
 	IsAuthenticatedUser(username string) (bool, error)
-	IsAuthorized(username string, photoID int) (bool, error)
-	UpdatePhoto(photoID int, req UpdateRequest) error
-	GetLikes(photoId int) ([]Like, error)
-	GetComments(photoID int) ([]Comment, error)
-	GetPhoto(photoID int) (PhotoMultipart, error)
-	DeletePhoto(photoId int) error
+	IsAuthorized(username string, photoID int64) (bool, error)
+	UpdatePhoto(photoID int64, req UpdateRequest) error
+	GetLikes(photoId int64) ([]Like, error)
+	GetComments(photoID int64) ([]Comment, error)
+	GetPhoto(photoID int64) (PhotoMultipart, error)
+	DeletePhoto(photoId int64) error
 	BanExists(banningUsername, bannedUsername string) (bool, error)
 	AddBan(banningUsername, bannedUsername string) error
 	GetBanned(username string) ([]Ban, error)
 	Unban(banningUsername, bannedUsername string) error
-	ExtractAuthor(photoID int) (string, error)
-	AddComment(comment Comment) error
+	ExtractAuthor(photoID int64) (string, error)
+	AddComment(comment Comment) (int64, error)
 	LikeExists(like Like) (bool, error)
 	AddLike(like Like) error
 	IsAuthorizedToDeleteLike(like Like, username string) (bool, error)
 	DeleteLike(like Like) error
 	CommentExists(commentID int) (bool, error)
 	IsAuthorizedToDeleteComment(username string, commentID int) (bool, error)
-	DeleteComment(commentID int, photoID int) error
+	DeleteComment(commentID int, photoID int64) error
 	FollowExists(follower, following string) (bool, error)
 	AddFollow(follower, following string) error
 	Unfollow(follower, followed string) error
@@ -171,7 +176,7 @@ func New(db *sql.DB) (AppDatabase, error) {
 		sqlStmt := `
 
 			CREATE TABLE IF NOT EXISTS photos (
-				photo_id INTEGER PRIMARY KEY,
+				photo_id INTEGER PRIMARY KEY AUTOINCREMENT,
 				photo BLOB NOT NULL,
 				author TEXT NOT NULL,
 				upload_datetime TEXT NOT NULL,
@@ -188,7 +193,7 @@ func New(db *sql.DB) (AppDatabase, error) {
 			);
 			
 			CREATE TABLE IF NOT EXISTS comments (
-				comment_id INTEGER PRIMARY KEY,
+				comment_id INTEGER PRIMARY KEY AUTOINCREMENT,
 				photo_id INTEGER,
 				username TEXT,
 				text TEXT,
@@ -199,7 +204,7 @@ func New(db *sql.DB) (AppDatabase, error) {
 			CREATE TABLE IF NOT EXISTS users (
 				username TEXT PRIMARY KEY
 			);
-			CREATE TABLE Bans (
+			CREATE TABLE IF NOT EXISTS Bans (
 				banId INTEGER PRIMARY KEY,
 				banningUser TEXT NOT NULL,
 				bannedUser TEXT NOT NULL,

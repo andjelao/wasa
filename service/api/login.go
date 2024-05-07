@@ -4,6 +4,7 @@ import (
 	"database/sql"
 	"encoding/json"
 	"errors"
+	"fmt"
 	"net/http"
 
 	"github.com/julienschmidt/httprouter"
@@ -34,6 +35,8 @@ type LoginRequest struct {
 
 // do login
 func (rt *_router) login(w http.ResponseWriter, r *http.Request, ps httprouter.Params, ctx reqcontext.RequestContext) {
+	//e := rt.db.GetTables()
+	//fmt.Println(e)
 	// da procitam request body
 	// Decode the JSON request body
 	var user database.User
@@ -75,6 +78,7 @@ func (rt *_router) login(w http.ResponseWriter, r *http.Request, ps httprouter.P
 	if err != nil {
 		// Handle error if retrieving user from the database fails.
 		http.Error(w, "Internal Server Error- error retrieving profile", http.StatusInternalServerError)
+		fmt.Println(err)
 		return
 	}
 

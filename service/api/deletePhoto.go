@@ -30,7 +30,7 @@ func (rt *_router) deletePhoto(w http.ResponseWriter, r *http.Request, ps httpro
 		http.Error(w, "PhotoID is required", http.StatusBadRequest)
 		return
 	}
-	photoID, err := strconv.Atoi(ps.ByName("photoId"))
+	photoID, err := strconv.ParseInt(photoIDD, 10, 64)
 	if err != nil {
 		http.Error(w, "Internal server error-error converting to string", http.StatusInternalServerError)
 		return
