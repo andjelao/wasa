@@ -12,7 +12,7 @@ func (db *appdbimpl) IsAuthorized(username string, photoID int64) (bool, error) 
 
 	var authorr string
 	err := db.c.QueryRow("SELECT author FROM photos WHERE photo_id = ?", photoID).Scan(&authorr)
-	//err := db.c.QueryRow("SELECT author FROM photos WHERE photo_id = 7371312785867452000").Scan(&authorr)
+	// err := db.c.QueryRow("SELECT author FROM photos WHERE photo_id = 7371312785867452000").Scan(&authorr)
 	if err != nil {
 		if errors.Is(err, sql.ErrNoRows) {
 			// No photo found with the given photoID

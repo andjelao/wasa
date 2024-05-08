@@ -9,7 +9,7 @@ import (
 
 	// "encoding/base64"
 	"errors"
-	"fmt"
+	// "fmt"
 )
 
 func (db *appdbimpl) GetProfile(username string) (Profile, error) {
@@ -116,15 +116,15 @@ func (db *appdbimpl) GetProfile(username string) (Profile, error) {
 			return profile, err
 		}
 		// populate likes i like count
-		fmt.Println("database reads", photo.PhotoId)
+		// fmt.Println("database reads", photo.PhotoId)
 
 		photo.Likes, err = db.GetLikes(photo.PhotoId)
 		if err != nil {
 			return profile, err
 		}
 		photo.LikesCount = len(photo.Likes)
-		fmt.Println(photo.LikesCount)
-		fmt.Println(photo.CommentsCount)
+		// fmt.Println(photo.LikesCount)
+		// fmt.Println(photo.CommentsCount)
 		// populate comments
 
 		photo.Comments, err = db.GetComments(photo.PhotoId)
