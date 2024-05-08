@@ -16,7 +16,7 @@ export default {
 			loading: false,
 			username: localStorage.getItem("token"),
             photos: [],
-
+            exists: true,
         }
          },
     methods: {
@@ -25,10 +25,16 @@ export default {
             // Set authorization header
             const headers = { Authorization: `Bearer ${token}` };
 
-            let response = await this.$axios.get("/users/"+this.username+"/photo-stream",{ headers })
-            this.photos=response.data
-            this.posts= response.data
-
+            try{
+                let response = await this.$axios.get("/users/"+this.username+"/photo-stream",{ headers })
+                this.photos=response.data
+                this.posts= response.data
+            }catch (error){
+                            if (error.response.status === 404) {
+                                // Set the 'isFollower' variable to true
+                                this.exists = false;
+                            }
+                        }
 
 
         },
@@ -70,7 +76,7 @@ export default {
                 <div style="margin-left: 450px; margin-top: 30px; font-size: large;">
 			<strong> My Stream:</strong>
 		</div>
-        <div class="col" style="margin-left: 750px; margin-top: 30px;">
+        <div v-if="exists" class="col" style="margin-left: 750px; margin-top: 30px;">
 			
 			<Stream_Photo :posts="photos" @delete-post="delPost()"></Stream_Photo>
 			<div>

@@ -145,6 +145,7 @@ export default {
         },
 
         async refresh() {
+            this.banned= false
             this.username= localStorage.getItem("token")
             this.myProfile()
             this.searchQuery= ""

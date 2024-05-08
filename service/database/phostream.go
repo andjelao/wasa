@@ -24,6 +24,9 @@ func (db *appdbimpl) PhotoStream(username string, sinceDateTime string) ([]Photo
 	// Query to retrieve users followed by the given username
 	followQuery := `SELECT followed FROM follow WHERE follower = ?`
 
+	// query to get users who banned me
+	banQuery := `SELECT banningUser FROM Bans WHERE bannedUser = ?`
+
 	// Execute the query
 	rows, err := db.c.Query(followQuery, username)
 	if err != nil {
@@ -35,6 +38,14 @@ func (db *appdbimpl) PhotoStream(username string, sinceDateTime string) ([]Photo
 		}
 	}
 	defer rows.Close()
+
+	banRows, err := db.c.Query(banQuery, username)
+	if err != nil {
+		return nil, err
+	}
+	defer banRows.Close()
+
+	var bannedUsers []string
 
 	var followedUsers []string
 	// Iterate over the result rows and populate followedUsers slice
@@ -48,8 +59,36 @@ func (db *appdbimpl) PhotoStream(username string, sinceDateTime string) ([]Photo
 	if err := rows.Err(); err != nil {
 		return nil, err
 	}
-	placeholders := make([]string, len(followedUsers))
-	for i := range followedUsers {
+
+	// Populate bannedUsers slice
+	for banRows.Next() {
+		var bannedUser string
+		if err := banRows.Scan(&bannedUser); err != nil {
+			return nil, err
+		}
+		bannedUsers = append(bannedUsers, bannedUser)
+	}
+	if err := banRows.Err(); err != nil {
+		return nil, err
+	}
+
+	// Exclude banned users from the followed users
+	var filteredUsers []string
+	for _, followedUser := range followedUsers {
+		found := false
+		for _, bannedUser := range bannedUsers {
+			if followedUser == bannedUser {
+				found = true
+				break
+			}
+		}
+		if !found {
+			filteredUsers = append(filteredUsers, followedUser)
+		}
+	}
+
+	placeholders := make([]string, len(filteredUsers))
+	for i := range filteredUsers {
 		placeholders[i] = "?"
 	}
 
