@@ -36,20 +36,21 @@ func (db *appdbimpl) RetrievePhotos(users []string, myUsername string) ([]PhotoM
 			return nil, err
 		}
 		// populate likes i like count
-		var likes []Like
+		// makla unused
+		// var likes []Like
 		photo.Likes, err = db.GetLikes(photo.PhotoId)
 		if err != nil {
 			return photos, err
 		}
-		photo.LikesCount = len(likes)
+		photo.LikesCount = len(photo.Likes)
 
 		// populate comments
-		var comments []Comment
+		// var comments []Comment
 		photo.Comments, err = db.GetComments(photo.PhotoId)
 		if err != nil {
 			return photos, err
 		}
-		photo.CommentsCount = len(comments)
+		photo.CommentsCount = len(photo.Comments)
 		photos = append(photos, photo)
 	}
 	if err := rows.Err(); err != nil {

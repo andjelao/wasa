@@ -83,7 +83,10 @@ func (rt *_router) commentPhoto(w http.ResponseWriter, r *http.Request, ps httpr
 
 	// Decode the JSON request body
 	var newComment database.Comment
+
+	////// mozda je unused
 	var commentText database.CommentText
+
 	// var comm string
 	if err := json.NewDecoder(r.Body).Decode(&commentText); err != nil {
 		http.Error(w, "Failed to decode JSON body", http.StatusBadRequest)

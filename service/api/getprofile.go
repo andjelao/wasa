@@ -90,8 +90,8 @@ func (rt *_router) getProfile(w http.ResponseWriter, r *http.Request, ps httprou
 	// fmt.Println(string(jsonResponse))
 
 	// Unmarshal the JSON response into a Response struct
-	var proba database.Profile
-	err = json.Unmarshal(jsonResponse, &proba)
+	// var proba database.Profile
+	// err = json.Unmarshal(jsonResponse, &proba)
 
 	// Print the photoId of each object in the userPhotos array
 	// for _, photo := range proba.UserPhotos {

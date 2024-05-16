@@ -73,6 +73,10 @@ func (rt *_router) unfollow(w http.ResponseWriter, r *http.Request, ps httproute
 		http.Error(w, "Forbidden - not allowed access because of the ban", http.StatusForbidden)
 		return
 	}
+	if err != nil {
+		http.Error(w, "Internal server error", http.StatusInternalServerError)
+		return
+	}
 
 	// check if follow object exists
 	followExists, err := rt.db.FollowExists(username, followedUsername)

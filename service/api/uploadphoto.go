@@ -132,6 +132,8 @@ func (rt *_router) uploadPhoto(w http.ResponseWriter, r *http.Request, ps httpro
 	// Do something with the photo data, such as saving it to a database or storage
 	// kako da stavim u bazu
 	// Insert photo into the database
+
+	// novo unused
 	riid, err := rt.db.InsertPhoto(photo)
 	if err != nil {
 		// Handle error if insertion fails
@@ -141,6 +143,8 @@ func (rt *_router) uploadPhoto(w http.ResponseWriter, r *http.Request, ps httpro
 	}
 	photo.PhotoEncoded = base64.StdEncoding.EncodeToString(photo.Photo)
 	// fmt.Println("encoded" + photo.PhotoEncoded)
+
+	// novo unused ili overwriting
 	photo.Photo = nil
 	photo.PhotoId = riid
 	// Respond with success message

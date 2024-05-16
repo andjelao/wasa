@@ -136,6 +136,7 @@ func (db *appdbimpl) GetProfile(username string) (Profile, error) {
 		if len(photo.Photo) > 0 {
 			photo.PhotoEncoded = base64.StdEncoding.EncodeToString(photo.Photo)
 			// fmt.Println("encoded" + photo.PhotoEncoded)
+			// mozda unused
 			photo.Photo = nil
 
 		}

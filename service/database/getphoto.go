@@ -15,11 +15,12 @@ func (db *appdbimpl) GetPhoto(photoID int64) (PhotoMultipart, error) {
 	row := db.c.QueryRow(query, photoID)
 
 	// Initialize variables to store the retrieved photo data
-	var photoData []byte
+	// mozda je unused
+	// var photoData []byte
 	var photo PhotoMultipart
 
 	// Scan the row to extract photo data
-	err := row.Scan(&photoData, &photo.PhotoId, &photo.Author, &photo.UploadDateTime, &photo.Location, &photo.Caption)
+	err := row.Scan(&photo.Photo, &photo.PhotoId, &photo.Author, &photo.UploadDateTime, &photo.Location, &photo.Caption)
 	if err != nil {
 		if errors.Is(err, sql.ErrNoRows) {
 			return photo, err
@@ -28,23 +29,24 @@ func (db *appdbimpl) GetPhoto(photoID int64) (PhotoMultipart, error) {
 	}
 
 	// Decode photo data from byte slice
-	photo.Photo = photoData
+	// photo.Photo = photoData
 
 	// populate likes i like count
-	var likes []Like
+	// izbrisem jer je ne koristim
+	// var likes []Like
 	photo.Likes, err = db.GetLikes(photoID)
 	if err != nil {
 		return photo, err
 	}
-	photo.LikesCount = len(likes)
+	photo.LikesCount = len(photo.Likes)
 
 	// populate comments
-	var comments []Comment
+	// var comments []Comment
 	photo.Comments, err = db.GetComments(photoID)
 	if err != nil {
 		return photo, err
 	}
-	photo.CommentsCount = len(comments)
+	photo.CommentsCount = len(photo.Comments)
 
 	return photo, nil
 }

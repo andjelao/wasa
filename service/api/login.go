@@ -60,11 +60,12 @@ func (rt *_router) login(w http.ResponseWriter, r *http.Request, ps httprouter.P
 			return
 		}
 	}
-	var exist bool = false
+	//// nova unused
+	// var exist bool = false
 	if authenticated {
 		//
 		user, err = rt.db.Login(loginReq.Username)
-		exist = true
+		// exist = true
 	} else {
 		//
 		user, err = rt.db.CreateUser(loginReq.Username)
@@ -110,7 +111,7 @@ func (rt *_router) login(w http.ResponseWriter, r *http.Request, ps httprouter.P
 	}
 	// Set content type header.
 	w.Header().Set("Content-Type", "application/json")
-	if exist {
+	if authenticated {
 		w.WriteHeader(http.StatusOK)
 	} else {
 		w.WriteHeader(http.StatusCreated)
